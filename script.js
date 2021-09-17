@@ -74,13 +74,18 @@ Vue.component('todo-item', {
             </div>
             <div class="row mt-2 collapse" :id="'comments' + todo.id.toString()">
                 <div class="card card-body">
-                    <div class="input-group">
+                    <div class="input-group mb-2">
                         <input type="text" class="form-control" v-model="commentText">
                         <button type="button" class="btn btn-primary" @click="addComment">Add Comment</button>
                     </div>
-                    <ul v-for='comment in todo.comments' :key='comment.id'>
-                        <li>{{comment.content}}</li>
-                    </ul>
+                    <div v-for='comment in todo.comments' :key='comment.id'>
+                        <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">{{ comment.id }}.</span>
+                            </div>
+                            <input type="text" class="form-control" :value="comment.content" @input="comment.content = $event.target.value; updateTodo(todo)">
+                        </div>
+                    </div>
                 </div>
             </div>
         </li>
