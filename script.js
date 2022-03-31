@@ -1,18 +1,67 @@
+'use strict'
+
 document.addEventListener('DOMContentLoaded', function() {
     var todos = localStorage.getItem('todos');
     if (todos == null) {
         localStorage.setItem('todos', JSON.stringify([]));
     }
 });
+
 const TaskStatus = {
     New: 'New',
     Active: 'Active',
     Close: 'Close',
     Reactive: 'Reactive'
 };
-Vue.prototype.TaskStatus = TaskStatus;
 
-Vue.component('todo-item', {
+class Todo {
+    constructor(id, title, content, status) {
+        this.id = id;
+        this.title = title;
+        this.content = content;
+        this.comments = [];
+        this.status = status;
+        this.created = Date.now;
+        this.modified = Date.now;
+    }
+}
+
+class TodoComment {
+    constructor(id, content) {
+        this.id = id;
+        this.content = content;
+    }
+}
+
+const app = Vue.createApp({
+    data: function () {
+        return {
+            /** @type {Todo[]} */
+            todos: JSON.parse(localStorage.getItem('todos')) || {},
+        };
+    },
+    methods: {
+        /**
+         * updateTodos
+         * @param {Todo[]} todos 
+         */
+        updateTodos: function (todos) {
+            localStorage.todos = JSON.stringify(this.todos);
+        },
+        /**
+         * deleteTodo
+         * @this Vue
+         * @param {Todo} todo
+         */
+        deleteTodo: function (todo) {
+            if (!confirm(`削除します。\nよろしいですか？\n Todo: ${todo.title}`)) return;
+            this.todos = this.todos.filter(x => x.id !== todo.id);
+            this.updateTodos(this.todos);
+        }
+    }
+});
+
+app.component('todo-item', {
     props: {
         todo:  {
             id: Number,
@@ -67,6 +116,7 @@ Vue.component('todo-item', {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16">
                                     <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
                                 </svg>
+                                <span class="badge bg-light text-dark">{{todo.comments?.length}}</span>
                             </button>
                         </div>
                     </div>
@@ -94,16 +144,30 @@ Vue.component('todo-item', {
         this.selected = this.taskStatuses.find(x => x.value == this.todo.status).value;
     },
     methods: {
+        /**
+         * statuschanged
+         * @param {Event} ev 
+         */
         statusChanged: function (ev) {
             this.updateTodo({ status: ev.target.value });
         },
+        /**
+         * updateTodo
+         * @param {Todo} todo 
+         */
         updateTodo: function (todo) {
             Object.assign(this.todo, todo);
             this.$emit('update-todo', this.todo);
         },
+        /**
+         * deleteTodo
+         */
         deleteTodo: function () {
             this.$emit('delete-todo', this.todo);
         },
+        /**
+         * addComment
+         */
         addComment: function () {
             if (this.todo.comments == undefined) this.todo.comments = [];
             if (this.todo.comments.length == 0) {
@@ -121,14 +185,15 @@ Vue.component('todo-item', {
     }
 });
 
-Vue.component('todo-list', {
+app.component('todo-list', {
     props: {
         todos: Array,
     },
     data: function () {
         return {
-            // 標準ではIdの降順ですべて出力
+            /** 標準ではIdの降順ですべて出力 */
             sortCondition: (a, b) => b.id - a.id,
+            /** @type {boolean[]} */
             filterConditions: [],
             checkedNew: true,
             checkedActive: true,
@@ -137,6 +202,10 @@ Vue.component('todo-list', {
         };
     },
     computed: {
+        /**
+         * orderedTodos
+         * @returns {Todo[]}
+         */
         orderedTodos: function () {
             var res = [...this.todos].filter(todo => this.filterConditions.some(fn => fn(todo)));
             return res.sort(this.sortCondition);
@@ -188,6 +257,21 @@ Vue.component('todo-list', {
                     </ul>
                 </span>
             </div>
+            <div class="col-4">
+                <span class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        Settings
+                    </button>
+                    <ul class="dropdown-menu" aria-labeledby="dropdownMenuButton">
+                        <li>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ExportModal">Export</button>
+                        </li>
+                        <li>
+                            <button type="button" class="btn btn-danger">All Clear</button>
+                        </li>
+                    </ul>
+                </span>
+            </div>
         </div>
         <div class="row">
             <div class="col">
@@ -203,6 +287,24 @@ Vue.component('todo-list', {
                         </todo-item>
                     </transition-group>
                 </ul>
+            </div>
+        </div>
+        <div class="modal fade" id="ExportModal" tabindex="-1" role="dialog" aria-labelledby="ExportModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="ExportModalLabel">Todo JSON</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <button type="button" class="btn btn-primary"
+                            @click="copyExportJson">Copy</button>
+                        <pre>{{ JSON.stringify(todos) }}</pre>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -238,11 +340,28 @@ Vue.component('todo-list', {
             if (this.checkedReactive) {
                 this.filterConditions.push((x) => x.status == this.TaskStatus.Reactive);
             }
+        },
+        /**
+         * @param {Event} ev 
+         */
+        allCrear: function (ev) {
+            if (confirm('登録データをすべて削除します。\nよろしいですか？')) {
+                localStorage.setItem('todos', JSON.stringify([]));
+                this.todos = [];
+                this.updateTodos();
+                alert('データを削除しました。');
+            }
+        },
+        /**
+         * @param {Event} ev 
+         */
+        copyExportJson: function (ev) {
+            navigator.clipboard.writeText(JSON.stringify(this.todos));
         }
     }
 });
 
-Vue.component('todo-creater', {
+app.component('todo-creater', {
     props: {
         todos: Array,
     },
@@ -254,7 +373,7 @@ Vue.component('todo-creater', {
     template: `
         <div class="row">
             <div class="col">
-                <input class="form-control" type="text" v-model='text'></input>
+                <input class="form-control" type="text" v-model='text'/>
             </div>
             <div class="col-auto">
                 <button class="btn btn-primary" @click="addTodo" value="Add">Add</button>
@@ -274,34 +393,5 @@ Vue.component('todo-creater', {
     }
 });
 
-var app = new Vue({
-    el: '#app',
-    data: {
-        todos: JSON.parse(localStorage.getItem('todos'))
-    },
-    methods: {
-        updateTodos: function (todos) {
-            localStorage.todos = JSON.stringify(this.todos);
-        },
-        deleteTodo: function (todo) {
-            if (!confirm(`削除します。\nよろしいですか？\n Todo: ${todo.title}`)) return;
-            this.todos = this.todos.filter(x => x.id !== todo.id);
-            this.updateTodos(this.todos);
-        }
-    }
-});
-
-function Todo(id, title, content, status) {
-    this.id = id;
-    this.title = title;
-    this.content = content;
-    this.comments = [];
-    this.status = status;
-    this.created = Date.now;
-    this.modified = Date.now;
-}
-
-function Comment(id, content) {
-    this.id = id;
-    this.content = content;
-}
+app.config.globalProperties.TaskStatus = TaskStatus;
+app.mount('#app');
