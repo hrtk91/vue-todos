@@ -7,10 +7,9 @@
         {
             "type": "pwa-chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost",
-            "url": "${workspaceFolder}/index.html",
-            "webRoot": "${workspaceFolder}",
-            "runtimeArgs": ["--disable-web-security"]
+            "name": "Launch localhost",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}"
         }
     ]
 }

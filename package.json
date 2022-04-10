@@ -1,0 +1,26 @@
+{
+  "name": "vue-todos",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hrtk91/vue-todos.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hrtk91/vue-todos/issues"
+  },
+  "homepage": "https://github.com/hrtk91/vue-todos#readme",
+  "dependencies": {
+    "vue": "^3.2.31"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^2.3.1",
+    "vite": "^2.9.1"
+  }
+}
