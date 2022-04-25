@@ -181,16 +181,16 @@ export default {
         filterChange: function (e) {
             this.filterConditions = [];
             if (this.checkedNew) {
-                this.filterConditions.push((x) => x.status == this.TaskStatus.New);
+                this.filterConditions.push((x) => x.status == TaskStatus.New);
             }
             if (this.checkedActive) {
-                this.filterConditions.push((x) => x.status == this.TaskStatus.Active);
+                this.filterConditions.push((x) => x.status == TaskStatus.Active);
             }
             if (this.checkedClose) {
-                this.filterConditions.push((x) => x.status == this.TaskStatus.Close);
+                this.filterConditions.push((x) => x.status == TaskStatus.Close);
             }
             if (this.checkedReactive) {
-                this.filterConditions.push((x) => x.status == this.TaskStatus.Reactive);
+                this.filterConditions.push((x) => x.status == TaskStatus.Reactive);
             }
         },
         /**
