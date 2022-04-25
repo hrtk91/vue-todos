@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [vue()],
   base: '/vue-todos/',
   build: {
-    outDir: 'docs'
+    outDir: 'docs',
+    sourcemap: true,
   }
 })
